@@ -1,0 +1,78 @@
+// Paste this into https://dbdiagram.io (Import > DBML) to draw the ER diagram.
+// Cardinality is shown by the Ref lines:  < one-to-many,  > many-to-one,  - one-to-one,
+// many-to-many is the item_authors table sitting between items and authors.
+
+Table membership_types {
+  type_name text [pk]
+  max_items int [not null]
+  loan_days int [not null]
+  fine_per_day int [not null]
+}
+Table members {
+  member_id text [pk]
+  name text [not null]
+  email text [not null, unique]
+  membership_type text [not null]
+}
+Table categories {
+  category_id int [pk]
+  name text [not null, unique]
+  parent_id int
+}
+Table items {
+  isbn text [pk, note: '13 digits']
+  title text [not null]
+  category_id int [not null]
+  item_type text [not null, note: 'Book | Magazine | Reference']
+  pages int
+  price int
+  total_copies int
+}
+Table authors {
+  author_id int [pk]
+  name text [not null, unique]
+}
+Table item_authors {
+  isbn text [pk]
+  author_id int [pk]
+  position int
+}
+Table loans {
+  loan_id text [pk]
+  member_id text [not null]
+  isbn text [not null]
+  issue_date text [not null]
+  due_date text [not null]
+  return_date text [note: 'NULL = still on loan']
+  renewals int
+}
+Table fines {
+  loan_id text [pk]
+  amount int
+  paid int
+}
+Table reservations {
+  reservation_id int [pk, increment]
+  isbn text
+  member_id text
+  status text [note: 'waiting | held']
+  seq int [note: 'queue position, lower = first']
+}
+Table audit_log {
+  audit_id int [pk, increment]
+  logged_at text
+  action text
+  member_id text
+  isbn text
+}
+
+Ref: members.membership_type > membership_types.type_name   // many members : one type
+Ref: categories.parent_id > categories.category_id          // many sub-categories : one parent
+Ref: items.category_id > categories.category_id             // many items : one category
+Ref: item_authors.isbn > items.isbn                          // item_authors resolves many-to-many
+Ref: item_authors.author_id > authors.author_id
+Ref: loans.member_id > members.member_id                    // one member : many loans
+Ref: loans.isbn > items.isbn                                 // one item : many loans
+Ref: fines.loan_id - loans.loan_id                           // one loan : at most one fine
+Ref: reservations.isbn > items.isbn
+Ref: reservations.member_id > members.member_id
